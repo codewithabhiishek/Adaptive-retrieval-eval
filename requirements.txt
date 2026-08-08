@@ -1,0 +1,7 @@
+requests
+python-dotenv
+datasets
+sympy
+pandas
+matplotlib
+numpy
