@@ -4,7 +4,7 @@
 
 This project replicates and tests a finding from a research paper by
 Sepp Hochreiter's lab (JKU Linz), titled "Adaptive Retrieval helps
-Reasoning in LLMs - but mostly if it's not used" (arXiv:2602.07213).
+Reasoning in LLMs – but mostly if it's not used" (arXiv:2602.07213).
 
 ### The paper's core finding
 
@@ -51,45 +51,45 @@ very differently than expected (see Results below).
 
 ## Tech stack (all free tier)
 
-- Groq API (`llama-3.1-8b-instant`) — free tier, used instead of
+* Groq API (`llama-3.1-8b-instant`) — free tier, used instead of
   self-hosted Llama-3.1-8B-Instruct (the paper's exact model) since we
   don't have GPU infra. This is a known deviation from the paper worth
   disclosing.
-- Hugging Face `datasets` library → `HuggingFaceH4/MATH-500` dataset
+* Hugging Face `datasets` library → `HuggingFaceH4/MATH-500` dataset
   (500 math problems with ground-truth answers, difficulty levels 1-5)
-- `sympy` for symbolic answer-checking (so `1/2` and `0.5` count as equal)
-- Plain Python, no ML training involved — this is an orchestration/
+* `sympy` for symbolic answer-checking (so `1/2` and `0.5` count as equal)
+* Plain Python, no ML training involved — this is an orchestration/
   evaluation project, not a model-training project
 
 ## Important deviations from the paper (disclosed honestly)
 
-- We are NOT implementing real retrieval (no FAISS index, no MathPile/
+* We are NOT implementing real retrieval (no FAISS index, no MathPile/
   OpenMathInstruct-2 corpus). When the model emits `<search>`, we treat
   that emission itself as the signal and do not inject real retrieved
   content — the model just continues reasoning.
-- We use Groq's hosted `llama-3.1-8b-instant`, not a self-hosted
+* We use Groq's hosted `llama-3.1-8b-instant`, not a self-hosted
   Llama-3.1-8B-Instruct — this is likely a speed-optimized variant, not
   identical to the paper's model. Raw percentages do not match the
   paper's; the pattern doesn't fully replicate either (see below).
 
 ## Files in this project
 
-- `test_api.py` — confirms Groq API key works
-- `load_data.py` — confirms MATH-500 dataset loads correctly
-- `adaptive_agent.py` — core function: sends a problem through the
+* `test_api.py` — confirms Groq API key works
+* `load_data.py` — confirms MATH-500 dataset loads correctly
+* `adaptive_agent.py` — core function: sends a problem through the
   paper's exact system prompt, detects `<search>` tag, extracts
   `<answer>` tag (with fallback parsing for unclosed tags and `\boxed{}`)
-- `checker.py` — sympy-based function to check if two math answers are
+* `checker.py` — sympy-based function to check if two math answers are
   equivalent (handles fractions, decimals, pi notation, algebraic
   expressions)
-- `escalate.py` — self-consistency voting: for problems that triggered
+* `escalate.py` — self-consistency voting: for problems that triggered
   search, call the model 5x and take majority vote as final answer
-- `pipeline.py` — full pipeline tying agent + checker + escalation
+* `pipeline.py` — full pipeline tying agent + checker + escalation
   together, loops over a problem set, logs results to CSV
-- `test_calibration_large.py` — generates simple arithmetic problems to
+* `test_calibration_large.py` — generates simple arithmetic problems to
   test whether search-rate tracks difficulty independent of MATH-500's
   complexity/LaTeX-heavy phrasing
-- `.env` — holds `GROQ_API_KEY` and `HF_TOKEN` (not committed/shared)
+* `.env` — holds `GROQ_API_KEY` and `HF_TOKEN` (not committed/shared)
 
 ## Actual Results
 
@@ -98,17 +98,17 @@ Groq `llama-3.1-8b-instant`, no real retrieval corpus, `<search>`
 emission treated as the confidence signal itself.
 
 ### Finding 1: MATH-500 smoke test (n=15)
-- Search rate: 100% (15/15) — every problem triggered search, including
+* Search rate: 100% (15/15) — every problem triggered search, including
   Level 1-2 easy problems.
-- Overall accuracy: 40% (6/15)
-- Could not evaluate no-search accuracy (zero no-search cases occurred)
+* Overall accuracy: 40% (6/15)
+* Could not evaluate no-search accuracy (zero no-search cases occurred)
 
 ### Finding 2: Simple arithmetic calibration test (n=100 across 3 runs;
 most reliable single run n=60)
-- Search rate: 90-93% even on trivial arithmetic (e.g. "what is 2+2")
-- No-search accuracy: 80% (4/5) in the 60-problem run
-- Search accuracy: 82% (45/55) in the same run
-- **Key result: no-search and search accuracy are statistically
+* Search rate: 90-93% even on trivial arithmetic (e.g. "what is 2+2")
+* No-search accuracy: 80% (4/5) in the 60-problem run
+* Search accuracy: 82% (45/55) in the same run
+* **Key result: no-search and search accuracy are statistically
   indistinguishable in this setup (80% vs 82%).**
 
 ### Interpretation
@@ -143,21 +143,21 @@ structure.
 
 ## Status / progress log
 
-- [x] Environment set up (venv, libraries installed)
-- [x] Groq API key + HF token confirmed working
-- [x] MATH-500 dataset loads correctly (500 problems confirmed)
-- [x] Adaptive agent call function built, tested, hardened against
+* [x] Environment set up (venv, libraries installed)
+* [x] Groq API key + HF token confirmed working
+* [x] MATH-500 dataset loads correctly (500 problems confirmed)
+* [x] Adaptive agent call function built, tested, hardened against
       unclosed tags and `\boxed{}` fallback answers
-- [x] Answer-equivalence checker built and tested (fractions, decimals,
+* [x] Answer-equivalence checker built and tested (fractions, decimals,
       algebraic expressions, tuples with pi) — all passing
-- [x] Escalation (self-consistency voting) function built and tested
-- [x] Full pipeline script built, run on MATH-500 smoke test (n=15)
-- [x] Follow-up calibration tests built and run (n=10, 30, 60) on
+* [x] Escalation (self-consistency voting) function built and tested
+* [x] Full pipeline script built, run on MATH-500 smoke test (n=15)
+* [x] Follow-up calibration tests built and run (n=10, 30, 60) on
       simple arithmetic to isolate difficulty-independence of search
       behavior
-- [x] Manually spot-checked outputs by hand (confirmed genuine model
+* [x] Manually spot-checked outputs by hand (confirmed genuine model
       behavior, not a parsing bug)
-- [x] Results summarized above
+* [x] Results summarized above
 
 ## What "done" looks like (achieved)
 
