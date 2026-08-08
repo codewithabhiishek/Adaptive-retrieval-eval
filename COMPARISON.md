@@ -17,12 +17,25 @@ This document presents a side-by-side comparative analysis of the original resea
 
 ## 2. Key Metric Comparison Table
 
-| Metric / Behavior | Original Paper Findings | Our Evaluation Findings | Percentage / Behavior Gap |
+| Metric / Behavior | Original Paper Findings | Our Evaluation Findings (n=86) | Percentage / Behavior Gap |
 | :--- | :--- | :--- | :--- |
-| **Search Trigger Rate** | **30% – 40%** (Triggered only on difficult problems) | **90% – 100%** (Triggered on almost all problems, including $2+2$) | **+60% to +70% over-triggering rate** |
-| **No-Search Accuracy** | **63.7%** on MATH-500 (High accuracy when skipping search) | **80%** on arithmetic / **0 samples** on MATH-500 (over-searched) | **Signal breakdown** (no-search cases rarely occur) |
-| **Search Accuracy** | **29.4%** on MATH-500 (Low accuracy when search requested) | **82%** on arithmetic | **Accuracy gap flattened** |
-| **Accuracy Gap (Signal)** | **+19.5% gap** (No-search accuracy significantly higher) | **0% gap** (80% vs 82% statistically indistinguishable) | **100% loss of confidence signal** |
+| **Search Trigger Rate** | **30% – 40%** (Triggered only on difficult problems) | **100.0% (84/84)** (Triggered on every single problem) | **+60% to +70% over-triggering rate** |
+| **No-Search Accuracy** | **63.7%** on MATH-500 (High accuracy when skipping search) | **0 samples** (No-search path never triggered) | **Metacognitive signal collapsed** |
+| **Initial Pass Accuracy** | ~44.2% CoT baseline | **34.5% (29/84)** | baseline API single-pass accuracy |
+| **Final Router Accuracy** | 63.7% no-search / 29.4% search | **52.4% (44/84)** | **+17.9% net boost from 5-vote voting** |
+| **Accuracy Gap (Signal)** | **+19.5% gap** (No-search accuracy significantly higher) | **0% gap** (Confidence signal completely lost) | **100% loss of confidence signal** |
+
+---
+
+## 3. Accuracy Breakdown by Difficulty Level (n=86)
+
+| Level | Sample Size ($n$) | Initial Pass Accuracy | Final 5-Vote Accuracy | Net Gain |
+| :--- | :--- | :--- | :--- | :--- |
+| **Level 1 (Easiest)** | $n = 7$ | **71.4%** (5/7) | **71.4%** (5/7) | 0.0% |
+| **Level 2** | $n = 23$ | **43.5%** (10/23) | **65.2%** (15/23) | **+21.7%** |
+| **Level 3** | $n = 15$ | **46.7%** (7/15) | **80.0%** (12/15) | **+33.3%** |
+| **Level 4** | $n = 19$ | **21.1%** (4/19) | **42.1%** (8/19) | **+21.0%** |
+| **Level 5 (Hardest)** | $n = 20$ | **15.0%** (3/20) | **20.0%** (4/20) | **+5.0%** |
 
 ---
 
