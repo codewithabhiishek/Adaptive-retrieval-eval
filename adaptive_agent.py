@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import random
 from dotenv import load_dotenv
 import requests
 
@@ -20,70 +21,87 @@ After the search results are returned, continue your step-by-step thinking.
 When you are ready to give the final answer, use the <answer> tag like
 this: <answer>your final answer</answer>"""
 
-def call_adaptive_agent(problem_text, temperature=0.0, retry=True):
-    time.sleep(10)  # pace calls to avoid rate limits
-    response = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {api_key}"},
-        json={
-            "model": "llama-3.1-8b-instant",
-            "temperature": temperature,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": problem_text}
-            ]
-        }
-    )
-    data = response.json()
-
-    if "choices" not in data:
-        print("API ERROR RESPONSE:", data)
-        if retry:
-            print("Backing off 30s and retrying once...")
-            time.sleep(30)
-            return call_adaptive_agent(problem_text, temperature, retry=False)
-        return {"raw_output": "", "wants_search": False, "answer": None}
-
-    content = data["choices"][0]["message"]["content"]
-    wants_search = "<search>" in content
-
+def parse_answer(content):
+    if not content:
+        return None
     # Try strict match first (opening + closing tag)
     answer_match = re.search(r"<answer>(.*?)</answer>", content, re.DOTALL)
     if answer_match:
-        answer = answer_match.group(1).strip()
-    else:
-        # Fallback 1: opening tag with no closing tag
-        fallback_match = re.search(r"<answer>\s*(.*)", content, re.DOTALL)
-        if fallback_match:
-            answer = fallback_match.group(1).strip().split("\n")[0].strip()
-            print(f"WARNING: no closing </answer> tag, used fallback: '{answer}'")
-        else:
-            # Fallback 2: model used \boxed{} instead of <answer> tags
-            boxed_matches = re.findall(r"\\boxed\{([^{}]*)\}", content)
-            if boxed_matches:
-                answer = boxed_matches[-1].strip()
-                print(f"WARNING: no <answer> tag, used \\boxed fallback: '{answer}'")
+        return answer_match.group(1).strip()
+    
+    # Fallback 1: opening tag with no closing tag
+    fallback_match = re.search(r"<answer>\s*(.*)", content, re.DOTALL)
+    if fallback_match:
+        answer = fallback_match.group(1).strip().split("\n")[0].strip()
+        return answer
+    
+    # Fallback 2: model used \boxed{} instead of <answer> tags
+    boxed_matches = re.findall(r"\\boxed\{([^{}]*)\}", content)
+    if boxed_matches:
+        return boxed_matches[-1].strip()
+        
+    return None
+
+def call_adaptive_agent(problem_text, temperature=0.0, max_retries=5):
+    retries = 0
+    errors = []
+    
+    while retries <= max_retries:
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "temperature": temperature,
+                    "messages": [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": problem_text}
+                    ]
+                },
+                timeout=60
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "choices" in data and len(data["choices"]) > 0:
+                    content = data["choices"][0]["message"]["content"]
+                    wants_search = "<search>" in content
+                    answer = parse_answer(content)
+                    return {
+                        "raw_output": content,
+                        "wants_search": wants_search,
+                        "answer": answer,
+                        "retries": retries,
+                        "errors": errors,
+                        "status": "success"
+                    }
+                else:
+                    err_msg = f"Malformed response structure: {data}"
+                    errors.append(err_msg)
+            elif response.status_code in [429, 500, 502, 503, 504]:
+                err_msg = f"HTTP {response.status_code}: {response.text}"
+                errors.append(err_msg)
             else:
-                print("NO ANSWER TAG OR BOXED ANSWER FOUND.")
-                answer = None
-
+                err_msg = f"HTTP {response.status_code}: {response.text}"
+                errors.append(err_msg)
+                # Unrecoverable client error
+                break
+        except Exception as e:
+            err_msg = f"Exception: {str(e)}"
+            errors.append(err_msg)
+            
+        retries += 1
+        if retries <= max_retries:
+            # Exponential backoff with jitter (e.g. 5s, 10s, 20s, 40s...)
+            backoff = (2 ** retries) * 2.5 + random.uniform(0.5, 2.0)
+            time.sleep(backoff)
+            
     return {
-        "raw_output": content,
-        "wants_search": wants_search,
-        "answer": answer
+        "raw_output": None,
+        "wants_search": False,
+        "answer": None,
+        "retries": retries,
+        "errors": errors,
+        "status": "failed"
     }
-
-# Quick manual test
-if __name__ == "__main__":
-    from datasets import load_dataset
-    dataset = load_dataset("HuggingFaceH4/MATH-500", split="test")
-
-    test_problem = dataset[0]["problem"]
-    print("PROBLEM:", test_problem)
-    print("\n--- Calling model ---\n")
-
-    result = call_adaptive_agent(test_problem)
-    print("WANTS SEARCH:", result["wants_search"])
-    print("EXTRACTED ANSWER:", result["answer"])
-    print("\n--- RAW OUTPUT ---\n")
-    print(result["raw_output"])

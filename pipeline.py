@@ -1,4 +1,6 @@
+import os
 import csv
+import json
 import time
 from datasets import load_dataset
 from adaptive_agent import call_adaptive_agent
@@ -6,87 +8,156 @@ from escalate import escalate_with_voting
 from checker import answers_match
 
 # --- CONFIG ---
-NUM_PROBLEMS = 15  # small smoke test first; we'll raise this later
-OUTPUT_CSV = "results_smoke_test.csv"
+RESULTS_DIR = "results"
+OUTPUT_CSV = os.path.join(RESULTS_DIR, "pilot_100_results.csv")
+RAW_JSONL = os.path.join(RESULTS_DIR, "raw_outputs.jsonl")
 
-def run_pipeline():
+FIELDNAMES = [
+    "problem_id",
+    "difficulty",
+    "problem_text",
+    "search_triggered",
+    "initial_answer",
+    "final_answer",
+    "ground_truth",
+    "initial_correct",
+    "final_correct",
+    "api_calls",
+    "retries_and_errors",
+    "status"
+]
+
+def load_existing_progress():
+    completed_ids = set()
+    if os.path.exists(OUTPUT_CSV):
+        with open(OUTPUT_CSV, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("status") == "success":
+                    completed_ids.add(int(row["problem_id"]))
+    return completed_ids
+
+def run_pipeline(limit=100, output_csv=OUTPUT_CSV, raw_jsonl=RAW_JSONL):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    
+    # Load MATH-500 test set (fixed deterministic ordering)
     dataset = load_dataset("HuggingFaceH4/MATH-500", split="test")
-    subset = dataset.select(range(NUM_PROBLEMS))
-
-    rows = []
+    subset = dataset.select(range(limit))
+    
+    completed_ids = load_existing_progress()
+    print(f"Loaded dataset subset of {limit} problems. Already completed: {len(completed_ids)}")
+    
+    # Ensure CSV header exists
+    file_exists = os.path.exists(output_csv)
+    csv_file = open(output_csv, "a", newline="", encoding="utf-8")
+    writer = csv.DictWriter(csv_file, fieldnames=FIELDNAMES)
+    if not file_exists:
+        writer.writeheader()
+        csv_file.flush()
+        
+    jsonl_file = open(raw_jsonl, "a", encoding="utf-8")
 
     for i, item in enumerate(subset):
+        problem_id = i
+        if problem_id in completed_ids:
+            print(f"Skipping problem {problem_id} (already completed).")
+            continue
+            
         problem = item["problem"]
         ground_truth = item["answer"]
         level = item.get("level", "unknown")
 
-        print(f"\n=== Problem {i+1}/{NUM_PROBLEMS} (Level {level}) ===")
+        print(f"\n=== Running Problem {problem_id + 1}/{limit} (Level {level}) ===")
 
         # Step 1: router call
-        result = call_adaptive_agent(problem)
-        wants_search = result["wants_search"]
-        router_answer = result["answer"]
+        router_res = call_adaptive_agent(problem)
+        
+        if router_res["status"] == "failed":
+            print(f"  -> Router call failed for problem {problem_id}")
+            row = {
+                "problem_id": problem_id,
+                "difficulty": level,
+                "problem_text": problem[:100],
+                "search_triggered": False,
+                "initial_answer": None,
+                "final_answer": None,
+                "ground_truth": ground_truth,
+                "initial_correct": False,
+                "final_correct": False,
+                "api_calls": router_res["retries"],
+                "retries_and_errors": json.dumps(router_res["errors"]),
+                "status": "failed"
+            }
+            writer.writerow(row)
+            csv_file.flush()
+            continue
+
+        wants_search = router_res["wants_search"]
+        initial_answer = router_res["answer"]
+        initial_correct = answers_match(initial_answer, ground_truth) if initial_answer is not None else False
+        
+        raw_log = {
+            "problem_id": problem_id,
+            "difficulty": level,
+            "ground_truth": ground_truth,
+            "router_output": router_res["raw_output"],
+            "search_triggered": wants_search,
+            "initial_answer": initial_answer,
+            "initial_correct": initial_correct,
+            "escalation_outputs": []
+        }
 
         if not wants_search:
             # Fast path
-            final_answer = router_answer
-            path = "no_search"
+            final_answer = initial_answer
+            final_correct = initial_correct
             api_calls = 1
+            total_retries = router_res["retries"]
+            all_errors = router_res["errors"]
+            status = "success"
+            print(f"  Path: no_search | Initial/Final: {initial_answer} | Truth: {ground_truth} | Correct: {final_correct}")
         else:
             # Escalation path
             print("  -> Search triggered, escalating with 5-vote CoT...")
-            voted_answer, all_votes = escalate_with_voting(problem, n_votes=5)
-            final_answer = voted_answer
-            path = "search_escalated"
-            api_calls = 1 + 5
+            esc_res = escalate_with_voting(problem, n_votes=5)
+            
+            raw_log["escalation_outputs"] = esc_res["all_raw"]
+            final_answer = esc_res["voted_answer"]
+            final_correct = answers_match(final_answer, ground_truth) if final_answer is not None else False
+            
+            api_calls = 1 + (5 - esc_res["failed_calls"])
+            total_retries = router_res["retries"] + esc_res["retries"]
+            all_errors = router_res["errors"] + esc_res["errors"]
+            status = "success" if esc_res["voted_answer"] is not None or esc_res["failed_calls"] < 5 else "failed"
+            print(f"  Path: search_escalated | Initial: {initial_answer} (Correct: {initial_correct}) | Final: {final_answer} (Correct: {final_correct}) | Truth: {ground_truth}")
 
-        correct = answers_match(final_answer, ground_truth)
-
-        print(f"  Path: {path} | Final answer: {final_answer} | "
-              f"Ground truth: {ground_truth} | Correct: {correct}")
-
-        rows.append({
-            "index": i,
-            "level": level,
-            "problem": problem[:80],  # truncated for readability
-            "wants_search": wants_search,
-            "path": path,
+        row = {
+            "problem_id": problem_id,
+            "difficulty": level,
+            "problem_text": problem[:100],
+            "search_triggered": wants_search,
+            "initial_answer": initial_answer,
             "final_answer": final_answer,
             "ground_truth": ground_truth,
-            "correct": correct,
-            "api_calls": api_calls
-        })
+            "initial_correct": initial_correct,
+            "final_correct": final_correct,
+            "api_calls": api_calls,
+            "retries_and_errors": json.dumps({"retries": total_retries, "errors": all_errors}),
+            "status": status
+        }
+        
+        writer.writerow(row)
+        csv_file.flush()
+        
+        jsonl_file.write(json.dumps(raw_log) + "\n")
+        jsonl_file.flush()
+        
+        # Pacing to remain safely within Groq rate limits
+        time.sleep(2)
 
-    # Save to CSV
-    with open(OUTPUT_CSV, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
-        writer.writeheader()
-        writer.writerows(rows)
-
-    print(f"\n\nDone. Results saved to {OUTPUT_CSV}")
-
-    # Quick summary
-    total = len(rows)
-    correct_count = sum(r["correct"] for r in rows)
-    no_search = [r for r in rows if r["path"] == "no_search"]
-    escalated = [r for r in rows if r["path"] == "search_escalated"]
-
-    print(f"\nTotal problems: {total}")
-    print(f"Overall accuracy: {correct_count}/{total} ({100*correct_count/total:.1f}%)")
-    if no_search:
-        ns_correct = sum(r["correct"] for r in no_search)
-        print(f"No-search subset: {len(no_search)} problems, "
-              f"{ns_correct}/{len(no_search)} correct ({100*ns_correct/len(no_search):.1f}%)")
-    if escalated:
-        esc_correct = sum(r["correct"] for r in escalated)
-        print(f"Escalated subset: {len(escalated)} problems, "
-              f"{esc_correct}/{len(escalated)} correct ({100*esc_correct/len(escalated):.1f}%)")
-
-    total_api_calls = sum(r["api_calls"] for r in rows)
-    always_vote_calls = total * 6  # 1 router + 5 votes if we voted on everything
-    print(f"\nTotal API calls used: {total_api_calls}")
-    print(f"API calls if always escalated: {always_vote_calls}")
-    print(f"Savings: {100*(1 - total_api_calls/always_vote_calls):.1f}%")
+    csv_file.close()
+    jsonl_file.close()
+    print(f"\nPipeline run completed. Output saved to {output_csv} and {raw_jsonl}")
 
 if __name__ == "__main__":
-    run_pipeline()
+    run_pipeline(limit=100)
