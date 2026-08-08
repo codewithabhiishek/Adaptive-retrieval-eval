@@ -1,5 +1,14 @@
 # Adaptive Retrieval Router — Project Notes
 
+## Quick Start
+
+To reproduce or extend this evaluation:
+1. Clone the repository: `git clone https://github.com/codewithabhiishek/Adaptive-retrieval-eval.git && cd Adaptive-retrieval-eval`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Add your Groq API key to a `.env` file: `GROQ_API_KEY=your_key_here`
+4. Run the benchmark pipeline: `python pipeline.py`
+5. Generate visualization charts: `python make_charts.py`
+
 ## What this project is
 
 This project replicates and tests a finding from a research paper by Sepp Hochreiter's lab (JKU Linz), titled "Adaptive Retrieval helps Reasoning in LLMs – but mostly if it's not used" (arXiv:2602.07213).
