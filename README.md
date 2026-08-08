@@ -74,8 +74,6 @@ very differently than expected (see Results below).
 
 ## Files in this project
 
-* `test_api.py` — confirms Groq API key works
-* `load_data.py` — confirms MATH-500 dataset loads correctly
 * `adaptive_agent.py` — core function: sends a problem through the
   paper's exact system prompt, detects `<search>` tag, extracts
   `<answer>` tag (with fallback parsing for unclosed tags and `\boxed{}`)
@@ -85,10 +83,19 @@ very differently than expected (see Results below).
 * `escalate.py` — self-consistency voting: for problems that triggered
   search, call the model 5x and take majority vote as final answer
 * `pipeline.py` — full pipeline tying agent + checker + escalation
-  together, loops over a problem set, logs results to CSV
-* `test_calibration_large.py` — generates simple arithmetic problems to
-  test whether search-rate tracks difficulty independent of MATH-500's
-  complexity/LaTeX-heavy phrasing
+  together, loops over a problem set, logs results to CSV, with
+  checkpoint/resume support and exponential backoff on rate limits
+* `load_data.py` — confirms MATH-500 dataset loads correctly
+* `COMPARISON.md` — detailed paper-vs-replication comparison table
+* `CASE_STUDIES.md` — illustrative examples of voting fixing/breaking
+  individual answers
+* `results/pilot_100_results.csv` — full structured results (86
+  problems completed as of this write-up, 100 in progress)
+* `results/raw_outputs.jsonl` — complete raw model reasoning for every
+  problem, for full auditability
+* `charts/` — accuracy visualizations (if generated)
+* `scratch/` — early exploratory/debug scripts (kept for transparency,
+  not part of the core pipeline)
 * `.env` — holds `GROQ_API_KEY` and `HF_TOKEN` (not committed/shared)
 
 ## Actual Results
@@ -97,72 +104,97 @@ very differently than expected (see Results below).
 Groq `llama-3.1-8b-instant`, no real retrieval corpus, `<search>`
 emission treated as the confidence signal itself.
 
-### Finding 1: MATH-500 smoke test (n=15)
-* Search rate: 100% (15/15) — every problem triggered search, including
-  Level 1-2 easy problems.
-* Overall accuracy: 40% (6/15)
-* Could not evaluate no-search accuracy (zero no-search cases occurred)
+### Pilot run: MATH-500 (n=86, 2 API failures excluded, target n=100)
 
-### Finding 2: Simple arithmetic calibration test (n=100 across 3 runs;
-most reliable single run n=60)
+* **Search trigger rate: 100% (84/84)** — every problem triggered
+  search, including Level 1 (easiest) problems.
+* **No-search subset: 0 problems** — the "confident skip" behavior
+  central to the paper's finding never occurred in this run.
+* **Initial (single-shot) accuracy: 34.5% (29/84)**
+* **Final accuracy after 5-vote majority escalation: 52.4% (44/84)**
+* **Net boost from escalation: +17.9 percentage points**
+
+By difficulty level:
+
+| Level | n | Initial Accuracy | Final (5-vote) Accuracy | Gain |
+|---|---|---|---|---|
+| 1 (easiest) | 7 | 71.4% | 71.4% | +0.0pp |
+| 2 | 23 | 43.5% | 65.2% | +21.7pp |
+| 3 | 15 | 46.7% | 80.0% | +33.3pp |
+| 4 | 19 | 21.1% | 42.1% | +21.0pp |
+| 5 (hardest) | 20 | 15.0% | 20.0% | +5.0pp |
+
+### Supporting evidence: simple arithmetic calibration test (n=100
+across 3 runs; most reliable single run n=60)
+
 * Search rate: 90-93% even on trivial arithmetic (e.g. "what is 2+2")
 * No-search accuracy: 80% (4/5) in the 60-problem run
 * Search accuracy: 82% (45/55) in the same run
-* **Key result: no-search and search accuracy are statistically
-  indistinguishable in this setup (80% vs 82%).**
+* No-search and search accuracy were statistically indistinguishable —
+  consistent with the MATH-500 pilot's finding that search-triggering
+  is not difficulty-discriminating in this setup.
 
 ### Interpretation
-The paper's central finding — that the model's decision to skip
-retrieval is a reliable signal of confidence and correctness (in their
-data: 63.7% no-search accuracy vs 44.2% CoT baseline on MATH-500, a
-+19.5pp gap) — does NOT replicate with this model/inference setup. In
-our data, whether the model searches or not carries almost no
-information about whether its answer will be correct.
 
-This is a genuine, honest divergence, not a bug — verified by manually
-reviewing raw model outputs (e.g. the model confidently answered
-"2 + 2 = 5" without triggering search, while correctly answering
-"what is the square root of 9" only after triggering search).
+**Finding 1 — the paper's core metacognitive signal does not
+replicate.** The paper's central claim — that skipping retrieval
+signals confidence and correctness (63.7% no-search accuracy vs 44.2%
+CoT baseline, a +19.5pp gap) — did not hold here. The no-search
+behavior never even occurred across 84 MATH-500 problems, and on a
+separate simple-arithmetic test, search-triggering carried no
+meaningful accuracy signal (80% vs 82%). This was verified by hand,
+including a case where the model confidently answered "2+2=5" without
+triggering search.
 
-Plausible explanations (not confirmed, worth further investigation):
+**Finding 2 — but self-consistency voting delivers a large, genuine
+accuracy gain.** While the *routing* mechanism failed (there was no
+"cheap path" to route to), the underlying escalation technique — 5-vote
+majority voting — improved accuracy from 34.5% to 52.4%, a +17.9pp
+gain. This held most strongly on medium-difficulty problems (Levels
+2-3, +21 to +33pp) and was weakest on the hardest problems (Level 5,
++5pp only) and easiest problems (Level 1, no room to improve).
+
+Plausible explanations for Finding 1 (not confirmed, worth further
+investigation):
 1. Model capability gap — `llama-3.1-8b-instant` may trade reasoning
    depth for speed compared to a full-precision self-hosted model.
 2. The explicit tool-offering in the system prompt may cause smaller
-   models to over-invoke the tool regardless of actual need, rather
-   than reflecting genuine uncertainty.
+   models to over-invoke the tool regardless of actual need.
 3. Groq inference showed slight non-determinism even at temperature=0.0
-   (same problem set, same seed, produced different wrong answers on a
-   repeat run) — worth noting as a possible minor confound.
+   — worth noting as a possible minor confound, not a primary driver.
 
 ### Honest conclusion
+
 The metacognitive "know when I don't know" signal identified in the
 paper appears to be model-dependent rather than a general property of
-adaptive-retrieval agents. Smaller or differently-tuned models may not
-exhibit reliable self-calibration even when given the same prompting
-structure.
+adaptive-retrieval agents. However, the escalation strategy the paper's
+finding would have gated behind that signal — self-consistency voting —
+is independently effective, delivering a substantial accuracy
+improvement regardless of whether the routing signal itself works.
 
 ## Status / progress log
 
-* [x] Environment set up (venv, libraries installed)
-* [x] Groq API key + HF token confirmed working
-* [x] MATH-500 dataset loads correctly (500 problems confirmed)
-* [x] Adaptive agent call function built, tested, hardened against
-      unclosed tags and `\boxed{}` fallback answers
-* [x] Answer-equivalence checker built and tested (fractions, decimals,
-      algebraic expressions, tuples with pi) — all passing
-* [x] Escalation (self-consistency voting) function built and tested
-* [x] Full pipeline script built, run on MATH-500 smoke test (n=15)
-* [x] Follow-up calibration tests built and run (n=10, 30, 60) on
-      simple arithmetic to isolate difficulty-independence of search
-      behavior
+* [x] Environment set up, API + dataset confirmed working
+* [x] Adaptive agent, checker, and escalation logic built and tested
+* [x] Full pipeline built with checkpoint/resume support and
+      exponential backoff on rate limits
+* [x] MATH-500 pilot run: 86/100 problems completed (2 API failures,
+      remainder in progress)
+* [x] Simple-arithmetic calibration tests run (n=10, 30, 60) as
+      supporting evidence
 * [x] Manually spot-checked outputs by hand (confirmed genuine model
       behavior, not a parsing bug)
-* [x] Results summarized above
+* [x] Case studies and comparison tables documented
+* [x] Repository cleaned and pushed to GitHub
+* [ ] Complete remaining ~14 problems to reach clean n=100
+* [ ] Final results update with complete n=100
+* [ ] Draft outreach message
 
 ## What "done" looks like (achieved)
 
-Not the original cost-savings framing, but a clearer, better-evidenced
-result: quantified evidence that the paper's core metacognitive
-confidence signal does not transfer reliably to a smaller/different
-inference setup, with a specific, reproducible example (2+2=5,
-no-search) supporting it.
+Two honest, evidenced findings instead of the original cost-savings
+framing: (1) quantified evidence that the paper's metacognitive
+confidence signal does not transfer to this smaller/different
+inference setup, and (2) quantified evidence that self-consistency
+voting alone delivers a substantial accuracy gain (+17.9pp) on this
+model, independent of the routing question.
