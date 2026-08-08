@@ -158,7 +158,6 @@ structure.
 - [x] Manually spot-checked outputs by hand (confirmed genuine model
       behavior, not a parsing bug)
 - [x] Results summarized above
-- [ ] Draft outreach email/message
 
 ## What "done" looks like (achieved)
 
