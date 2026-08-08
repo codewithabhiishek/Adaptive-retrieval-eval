@@ -91,8 +91,8 @@ very differently than expected (see Results below).
 * `COMPARISON.md` — detailed paper-vs-replication comparison table
 * `CASE_STUDIES.md` — illustrative examples of voting fixing/breaking
   individual answers
-* `results/pilot_100_results.csv` — full structured results (86
-  problems completed as of this write-up, 100 in progress)
+* `PROGRESS.md` — status tracker (what's done, what's remaining)
+* `results/pilot_100_results.csv` — full structured results
 * `results/raw_outputs.jsonl` — complete raw model reasoning for every
   problem, for full auditability
 * `charts/` — accuracy visualizations
@@ -100,13 +100,13 @@ very differently than expected (see Results below).
   not part of the core pipeline)
 * `.env` — holds `GROQ_API_KEY` and `HF_TOKEN` (not committed/shared)
 
-## Actual Results
+## Results
 
 ### Setup deviation from paper (recap)
 Groq `llama-3.1-8b-instant`, no real retrieval corpus, `<search>`
 emission treated as the confidence signal itself.
 
-### Pilot run: MATH-500 (n=86, 2 API failures excluded, target n=100)
+### Pilot run: MATH-500 (n=86)
 
 * **Search trigger rate: 100% (84/84)** — every problem triggered
   search, including Level 1 (easiest) problems.
@@ -178,26 +178,7 @@ finding would have gated behind that signal — self-consistency voting —
 is independently effective, delivering a substantial accuracy
 improvement regardless of whether the routing signal itself works.
 
-## Status / progress log
-
-* [x] Environment set up, API + dataset confirmed working
-* [x] Adaptive agent, checker, and escalation logic built and tested
-* [x] Full pipeline built with checkpoint/resume support and
-      exponential backoff on rate limits
-* [x] MATH-500 pilot run: 86/100 problems completed (2 API failures,
-      remainder in progress)
-* [x] Simple-arithmetic calibration tests run (n=10, 30, 60) as
-      supporting evidence
-* [x] Manually spot-checked outputs by hand (confirmed genuine model
-      behavior, not a parsing bug)
-* [x] Case studies and comparison tables documented
-* [x] Accuracy charts generated and embedded
-* [x] Repository cleaned and pushed to GitHub
-* [ ] Complete remaining ~14 problems to reach clean n=100
-* [ ] Final results update with complete n=100
-* [ ] Draft outreach message
-
-## What "done" looks like (achieved)
+## What "done" looks like
 
 Two honest, evidenced findings instead of the original cost-savings
 framing: (1) quantified evidence that the paper's metacognitive
@@ -205,3 +186,7 @@ confidence signal does not transfer to this smaller/different
 inference setup, and (2) quantified evidence that self-consistency
 voting alone delivers a substantial accuracy gain (+17.9pp) on this
 model, independent of the routing question.
+
+---
+
+For current project status and remaining work, see `PROGRESS.md`.
