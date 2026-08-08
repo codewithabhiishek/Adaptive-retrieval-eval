@@ -20,6 +20,7 @@ def generate_charts():
     df_succ = df[df["status"] == "success"].copy()
     
     # Convert boolean string columns to actual booleans
+    df_succ["search_triggered"] = df_succ["search_triggered"].astype(str).str.lower() == "true"
     df_succ["initial_correct"] = df_succ["initial_correct"].astype(str).str.lower() == "true"
     df_succ["final_correct"] = df_succ["final_correct"].astype(str).str.lower() == "true"
     df_succ["difficulty"] = df_succ["difficulty"].astype(str)
@@ -39,12 +40,11 @@ def generate_charts():
     ax.set_ylim(0, 100)
     ax.grid(axis="y", linestyle="--", alpha=0.7)
     
-    # Add value labels on top of each bar
     for bar in bars:
         height = bar.get_height()
         ax.annotate(f"{height:.1f}%",
                     xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 5),  # 5 points vertical offset
+                    xytext=(0, 5),
                     textcoords="offset points",
                     ha="center", va="bottom", fontsize=11, fontweight="bold")
         
@@ -79,7 +79,6 @@ def generate_charts():
     ax.set_ylim(0, 100)
     ax.grid(axis="y", linestyle="--", alpha=0.7)
     
-    # Add value labels over bars
     for rect in rects1:
         h = rect.get_height()
         ax.annotate(f"{h:.1f}%", xy=(rect.get_x() + rect.get_width() / 2, h),
@@ -94,6 +93,40 @@ def generate_charts():
     plt.savefig(by_level_path, dpi=300)
     plt.close()
     print(f"Created: {by_level_path}")
+
+    # -------------------------------------------------------------
+    # CHART 3: Search Trigger Rate (Bar Chart: Search Triggered vs No Search)
+    # -------------------------------------------------------------
+    searched_count = df_succ["search_triggered"].sum()
+    no_search_count = len(df_succ) - searched_count
+    total_count = len(df_succ)
+    
+    searched_pct = (searched_count / total_count) * 100 if total_count > 0 else 0
+    no_search_pct = (no_search_count / total_count) * 100 if total_count > 0 else 0
+
+    fig, ax = plt.subplots(figsize=(6.5, 5), dpi=300)
+    bars = ax.bar(["Search Triggered", "No Search"], [searched_count, no_search_count], 
+                  color=["#C44E52", "#8172B0"], width=0.45, edgecolor="none")
+    
+    ax.set_ylabel("Number of Problems", fontsize=12, labelpad=10)
+    ax.set_title(f"Search Trigger Distribution (n={total_count})", fontsize=13, fontweight="bold", pad=15)
+    ax.set_ylim(0, max(searched_count + 15, 10))
+    ax.grid(axis="y", linestyle="--", alpha=0.7)
+    
+    # Annotate count and percentage on top of bars
+    for bar, pct in zip(bars, [searched_pct, no_search_pct]):
+        height = bar.get_height()
+        ax.annotate(f"{int(height)} ({pct:.1f}%)",
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                    ha="center", va="bottom", fontsize=11, fontweight="bold")
+                    
+    plt.tight_layout()
+    search_path = os.path.join(CHARTS_DIR, "search_trigger_rate.png")
+    plt.savefig(search_path, dpi=300)
+    plt.close()
+    print(f"Created: {search_path}")
 
 if __name__ == "__main__":
     generate_charts()
