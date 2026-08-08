@@ -68,6 +68,10 @@ Groq `llama-3.1-8b-instant`, no real retrieval corpus, with `<search>` emission 
 * **Final accuracy after 5-vote majority escalation: 52.4% (44/84)**
 * **Net boost from escalation: +17.9 percentage points**
 
+![Search Trigger Distribution](charts/search_trigger_rate.png)
+
+*The "no-search" behavior central to the paper's finding never occurred in our 86-problem run.*
+
 ![Overall Accuracy](charts/overall_accuracy.png)
 
 ![Accuracy by Difficulty Level](charts/accuracy_by_level.png)
