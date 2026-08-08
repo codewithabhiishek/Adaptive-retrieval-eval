@@ -86,6 +86,8 @@ very differently than expected (see Results below).
   together, loops over a problem set, logs results to CSV, with
   checkpoint/resume support and exponential backoff on rate limits
 * `load_data.py` — confirms MATH-500 dataset loads correctly
+* `make_charts.py` — generates accuracy visualization charts from
+  results CSV
 * `COMPARISON.md` — detailed paper-vs-replication comparison table
 * `CASE_STUDIES.md` — illustrative examples of voting fixing/breaking
   individual answers
@@ -93,7 +95,7 @@ very differently than expected (see Results below).
   problems completed as of this write-up, 100 in progress)
 * `results/raw_outputs.jsonl` — complete raw model reasoning for every
   problem, for full auditability
-* `charts/` — accuracy visualizations (if generated)
+* `charts/` — accuracy visualizations
 * `scratch/` — early exploratory/debug scripts (kept for transparency,
   not part of the core pipeline)
 * `.env` — holds `GROQ_API_KEY` and `HF_TOKEN` (not committed/shared)
@@ -113,6 +115,10 @@ emission treated as the confidence signal itself.
 * **Initial (single-shot) accuracy: 34.5% (29/84)**
 * **Final accuracy after 5-vote majority escalation: 52.4% (44/84)**
 * **Net boost from escalation: +17.9 percentage points**
+
+![Overall Accuracy](charts/overall_accuracy.png)
+
+![Accuracy by Difficulty Level](charts/accuracy_by_level.png)
 
 By difficulty level:
 
@@ -185,6 +191,7 @@ improvement regardless of whether the routing signal itself works.
 * [x] Manually spot-checked outputs by hand (confirmed genuine model
       behavior, not a parsing bug)
 * [x] Case studies and comparison tables documented
+* [x] Accuracy charts generated and embedded
 * [x] Repository cleaned and pushed to GitHub
 * [ ] Complete remaining ~14 problems to reach clean n=100
 * [ ] Final results update with complete n=100
