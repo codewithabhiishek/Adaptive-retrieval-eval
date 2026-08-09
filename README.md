@@ -55,6 +55,7 @@ This shifted the project from its original cost-saving framing into a direct tes
 * `pipeline.py`: full pipeline tying agent, checker, and escalation together, looping over a problem set and logging results to CSV, with checkpoint/resume support and exponential backoff on rate limits
 * `load_data.py`: confirms the MATH-500 dataset loads correctly
 * `make_charts.py`: generates accuracy visualization charts from the results CSV
+* `requirements.txt`: Python dependencies needed to run this project
 * `COMPARISON.md`: a detailed paper-vs-replication comparison table
 * `CASE_STUDIES.md`: illustrative examples of voting fixing or breaking individual answers
 * `PROGRESS.md`: status tracker showing what's done and what's remaining
@@ -104,9 +105,9 @@ By difficulty level:
 
 ### Interpretation
 
-**Finding 1: the paper's core metacognitive signal doesn't replicate here.** The paper's central claim, that skipping retrieval signals confidence and correctness (63.7% no-search accuracy vs 44.2% CoT baseline, a +19.5pp gap), didn't hold in our setup. The no-search behavior never even occurred across 84 MATH-500 problems, and on a separate simple-arithmetic test, search-triggering carried no meaningful accuracy signal (80% vs 82%). We verified this by hand, including a case where the model confidently answered "2+2=5" without triggering search at all.
+**Finding 1: the paper's core metacognitive signal doesn't replicate here.** The paper's central claim, that skipping retrieval signals confidence and correctness (63.7% no-search accuracy vs 44.2% CoT baseline, a +19.5pp gap), didn't hold in our setup. Skipping search occurred in only 2 out of 100 MATH-500 problems, and among those 2 cases accuracy was 50%, not meaningfully different from the search-subset accuracy. On a separate simple-arithmetic test, search-triggering similarly carried no meaningful accuracy signal (80% vs 82%). We verified this by hand, including a case where the model confidently answered "2+2=5" without triggering search at all.
 
-**Finding 2: but self-consistency voting still delivers a large, genuine accuracy gain.** While the routing mechanism failed, since there was no "cheap path" to route to, the underlying escalation technique of 5-vote majority voting improved accuracy from 34.5% to 52.4%, a +17.9pp gain. This held most strongly on medium-difficulty problems (Levels 2-3, +21 to +33pp) and was weakest on the hardest problems (Level 5, +5pp only) and easiest problems (Level 1, no room left to improve).
+**Finding 2: but self-consistency voting still delivers a large, genuine accuracy gain.** While the routing mechanism largely failed, since there was almost never a "cheap path" to route to, the underlying escalation technique of 5-vote majority voting improved accuracy from 36.0% to 53.0%, a +17.0pp gain. This held most strongly on medium-difficulty problems (Levels 2-3, +20 to +26pp) and was weakest on the hardest problems (Level 5, +4.3pp only), while easier problems (Levels 1-2) still saw solid double-digit gains.
 
 A few plausible explanations for Finding 1 (not confirmed, worth further investigation):
 1. Model capability gap: `llama-3.1-8b-instant` may trade reasoning depth for speed compared to a full-precision self-hosted model.
@@ -119,7 +120,7 @@ The metacognitive "know when I don't know" signal identified in the paper appear
 
 ## What "done" looks like
 
-Two honest, evidenced findings instead of the original cost-savings framing: first, quantified evidence that the paper's metacognitive confidence signal doesn't transfer to this smaller, different inference setup, and second, quantified evidence that self-consistency voting alone delivers a substantial accuracy gain (+17.9pp) on this model, independent of the routing question.
+Two honest, evidenced findings instead of the original cost-savings framing: first, quantified evidence that the paper's metacognitive confidence signal doesn't transfer to this smaller, different inference setup, and second, quantified evidence that self-consistency voting alone delivers a substantial accuracy gain (+17.0pp) on this model, independent of the routing question.
 
 ---
 

@@ -23,19 +23,20 @@ This file tracks what's done and what's remaining. Read this first if picking up
 - [x] Recomputed final stats and re-rendered all 3 charts with clean n=100 dataset
 - [x] Repository cleaned: debug/exploratory scripts moved to `scratch/`, `.env` confirmed never committed, `.gitignore` verified
 - [x] `README.md` updated with final n=100 statistics and precise 2-case no-search analysis
+- [x] `requirements.txt` and Quick Start section added for reproducibility
 - [x] Repository pushed to GitHub
 
-## Remaining / Optional Next Steps
+## Remaining
 
-- [ ] (Optional) Run overnight 500-problem benchmark across entire MATH-500 dataset (`run_pipeline(limit=500)`).
-- [ ] (Optional) Write 4-page LaTeX evaluation paper detailing fragility of metacognitive retrieval signals across quantized API endpoints.
-- [ ] (Optional) Draft outreach message/email to paper authors detailing findings.
+Project is functionally complete. No further steps are required unless
+new questions come up worth investigating.
 
 ## Known limitations to keep in mind
 
 - We do not know Groq's exact quantization or optimization for `llama-3.1-8b-instant`. Do not state this as fact anywhere.
 - Several paper vs. our-results comparisons are not strictly apples-to-apples, since they compare different baselines. See `COMPARISON.md` section 2 for the honest breakdown.
 - `checker.py` has a few known false-negative cases on formatting differences (e.g. `√` vs `\sqrt{}`, unit suffixes like "12 cm" vs "12"). A small number of "incorrect" results in the data may actually be correct answers with formatting mismatches.
+- Only 2/100 problems produced a no-search case, so the no-search accuracy figure (50%) is not statistically reliable on its own; it is supporting, not primary, evidence.
 
 ## Daily API budget note
 
