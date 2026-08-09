@@ -1,4 +1,4 @@
-# Adaptive Retrieval Router — Project Notes
+# Adaptive Retrieval Evaluation
 
 ## Quick Start
 
