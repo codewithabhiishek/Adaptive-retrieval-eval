@@ -69,17 +69,17 @@ This shifted the project from its original cost-saving framing into a direct tes
 ### Setup deviation from paper (recap)
 Groq `llama-3.1-8b-instant`, no real retrieval corpus, with `<search>` emission treated as the confidence signal itself.
 
-### Pilot run: MATH-500 (n=86)
+### Full Benchmark Run: MATH-500 (n=100)
 
-* **Search trigger rate: 100% (84/84).** Every problem triggered search, including Level 1 (easiest) problems.
-* **No-search subset: 0 problems.** The "confident skip" behavior central to the paper's finding never occurred in this run.
-* **Initial (single-shot) accuracy: 34.5% (29/84)**
-* **Final accuracy after 5-vote majority escalation: 52.4% (44/84)**
-* **Net boost from escalation: +17.9 percentage points**
+* **Search trigger rate: 98.0% (98/100)** — almost every problem triggered search, including easy Level 1 problems.
+* **No-search subset: 2 problems** — the "confident skip" behavior central to the paper's finding almost never occurred.
+* **Initial (single-shot) accuracy: 36.0% (36/100)**
+* **Final accuracy after 5-vote majority escalation: 53.0% (53/100)**
+* **Net boost from escalation: +17.0 percentage points**
 
 ![Search Trigger Distribution](charts/search_trigger_rate.png)
 
-*The "no-search" behavior central to the paper's finding never occurred in our 86-problem run.*
+*The "no-search" behavior central to the paper's finding almost never occurred in our 100-problem run.*
 
 ![Overall Accuracy](charts/overall_accuracy.png)
 
@@ -89,11 +89,11 @@ By difficulty level:
 
 | Level | n | Initial Accuracy | Final (5-vote) Accuracy | Gain |
 |---|---|---|---|---|
-| 1 (easiest) | 7 | 71.4% | 71.4% | +0.0pp |
-| 2 | 23 | 43.5% | 65.2% | +21.7pp |
-| 3 | 15 | 46.7% | 80.0% | +33.3pp |
-| 4 | 19 | 21.1% | 42.1% | +21.0pp |
-| 5 (hardest) | 20 | 15.0% | 20.0% | +5.0pp |
+| 1 (easiest) | 11 | 54.5% (6/11) | 72.7% (8/11) | +18.2pp |
+| 2 | 25 | 48.0% (12/25) | 68.0% (17/25) | +20.0pp |
+| 3 | 19 | 47.4% (9/19) | 73.7% (14/19) | +26.3pp |
+| 4 | 22 | 27.3% (6/22) | 45.5% (10/22) | +18.2pp |
+| 5 (hardest) | 23 | 13.0% (3/23) | 17.4% (4/23) | +4.3pp |
 
 ### Supporting evidence: simple arithmetic calibration test (n=100 across 3 runs; most reliable single run n=60)
 
