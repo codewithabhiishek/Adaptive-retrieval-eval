@@ -6,6 +6,7 @@ def clean_answer(ans):
     if ans is None:
         return ""
     ans = ans.strip()
+    ans = re.sub(r"\\text\{([^{}]*)\}", r"\1", ans)
     ans = ans.replace("\\left", "").replace("\\right", "")
     ans = ans.replace("$", "")
     ans = ans.replace("\\!", "")

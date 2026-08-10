@@ -1,0 +1,7 @@
+difficulty_level,sample_size_n,search_triggered_count,search_trigger_rate_pct,initial_accuracy_pct,final_accuracy_pct,net_boost_pp
+Level 1,11,11,100.0,54.5,72.7,18.2
+Level 2,25,25,100.0,48.0,68.0,20.0
+Level 3,19,17,89.5,47.4,73.7,26.3
+Level 4,22,22,100.0,27.3,45.5,18.2
+Level 5,23,23,100.0,13.0,17.4,4.3
+Overall (Total),100,98,98.0,36.0,53.0,17.0

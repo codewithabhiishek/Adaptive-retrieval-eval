@@ -19,33 +19,32 @@ independent, small-scale replication attempt using hosted API inference.
 
 ## 2. Key Metric Comparison Table (MATH-500)
 
-| Metric / Behavior | Original Paper (MATH-500) | Our Evaluation (n=86) | Notes |
+| Metric / Behavior | Original Paper (MATH-500) | Our Evaluation (n=100) | Notes |
 | :--- | :--- | :--- | :--- |
-| **Search Trigger Rate** | 38.8% | 100.0% (84/84) | Large divergence — every problem triggered search in our run |
-| **No-Search Accuracy** | 63.7% | Not measurable (0 no-search cases occurred) | The "confident skip" behavior never appeared in our data |
-| **CoT-Only Baseline Accuracy** | 44.2% (plain CoT, no search tool offered) | Not directly measured (we always offered the search tool) | Not a like-for-like comparison — see below |
-| **Our Router's Initial-Pass Accuracy** | N/A | 34.5% (29/84) | First-attempt accuracy with the search tool available but before escalation |
-| **Escalated / Search-Subset Accuracy** | 29.4% (search-triggered subset, single pass) | 52.4% (44/84) after 5-vote majority escalation | Not directly comparable — paper's number is single-pass; ours is post-voting |
-| **Accuracy Gap (no-search vs search)** | +19.5pp (no-search notably higher) | Not measurable (no no-search cases) | Confidence signal could not be evaluated in our setup |
+| **Search Trigger Rate** | 38.8% | 98.0% (98/100) | Large divergence — 98% of problems triggered search in our run |
+| **No-Search Accuracy** | 63.7% | 50.0% (1/2) | Rare edge case in our run (only 2 no-search cases occurred: 1 correct, 1 incorrect) |
+| **CoT-Only Baseline Accuracy** | 44.2% (plain CoT, no search tool offered) | 48.0% (48/100) | Measured in our separate No-Tool baseline experiment (plain CoT) |
+| **Our Router's Initial-Pass Accuracy** | N/A | 36.0% (36/100) | First-attempt accuracy with search tool offered before escalation |
+| **Escalated / Search-Subset Accuracy** | 29.4% (search-triggered subset, single pass) | 53.0% (53/100) after 5-vote majority escalation | Not directly comparable — paper's number is single-pass; ours is post-voting |
+| **Accuracy Gap (no-search vs search)** | +19.5pp (no-search notably higher) | +14.0pp (50% vs 36%, n=2 edge case) | Small sample size (n=2 no-search cases), gap is consistent with chance |
 
 **Important note on comparability:** several paper numbers and our numbers
-are not strictly apples-to-apples, since our pipeline always offers the
-search tool (unlike the paper's plain CoT baseline) and our "final"
-accuracy includes 5-vote self-consistency escalation, which the paper's
-single-pass search-subset number does not. Differences are directional
-evidence, not a precise like-for-like replication.
+are not strictly apples-to-apples, since our main pipeline offers the
+search tool and our "final" accuracy includes 5-vote self-consistency
+escalation, which the paper's single-pass search-subset number does not.
+Differences are directional evidence, not a precise like-for-like replication.
 
 ---
 
-## 3. Accuracy Breakdown by Difficulty Level (Our Evaluation, n=86)
+## 3. Accuracy Breakdown by Difficulty Level (Our Evaluation, n=100)
 
 | Level | Sample Size (n) | Initial Pass Accuracy | Final 5-Vote Accuracy | Net Gain |
 | :--- | :--- | :--- | :--- | :--- |
-| **Level 1 (Easiest)** | 7 | 71.4% (5/7) | 71.4% (5/7) | +0.0pp |
-| **Level 2** | 23 | 43.5% (10/23) | 65.2% (15/23) | +21.7pp |
-| **Level 3** | 15 | 46.7% (7/15) | 80.0% (12/15) | +33.3pp |
-| **Level 4** | 19 | 21.1% (4/19) | 42.1% (8/19) | +21.0pp |
-| **Level 5 (Hardest)** | 20 | 15.0% (3/20) | 20.0% (4/20) | +5.0pp |
+| **Level 1 (Easiest)** | 11 | 54.5% (6/11) | 72.7% (8/11) | +18.2pp |
+| **Level 2** | 25 | 48.0% (12/25) | 68.0% (17/25) | +20.0pp |
+| **Level 3** | 19 | 47.4% (9/19) | 73.7% (14/19) | +26.3pp |
+| **Level 4** | 22 | 27.3% (6/22) | 45.5% (10/22) | +18.2pp |
+| **Level 5 (Hardest)** | 23 | 13.0% (3/23) | 17.4% (4/23) | +4.3pp |
 
 *(The paper does not report a directly comparable per-level breakdown
 for the search-decision behavior, so this table reflects our own data

@@ -1,11 +1,11 @@
-# Case Studies: Illustrative Qualitative Examples (Pilot Run n=86)
+# Case Studies: Illustrative Qualitative Examples (Pilot Run n=100)
 
 This document contains key qualitative case studies extracted from `results/pilot_100_results.csv` and `results/raw_outputs.jsonl` to illustrate specific router & voting behavior.
 
 ---
 
 ## Category A: Fixed by Escalation Voting (Initial = Incorrect, Final = Correct)
-Total occurrences in $n=86$ pilot: **18 problems** (+21.4% net recovery rate)
+Total occurrences in $n=100$ pilot: **20 problems** (+20.0% recovery rate)
 
 ### Example 1: Problem ID 5 (Level 2 Geometry)
 * **Problem**: A regular hexagon can be divided into six equilateral triangles. If the perimeter of one triangle is 21 inches, what is the perimeter of the hexagon?
@@ -34,7 +34,7 @@ Total occurrences in $n=86$ pilot: **18 problems** (+21.4% net recovery rate)
 ---
 
 ## Category B: Broken by Escalation Voting (Initial = Correct, Final = Incorrect)
-Total occurrences in $n=86$ pilot: **3 problems** (Rare: only 3.5% of cases)
+Total occurrences in $n=100$ pilot: **3 problems** (Rare: only 3.0% of cases)
 
 ### Example 4: Problem ID 55 (Level 4 Trigonometry)
 * **Problem**: Trigonometric simplification problem.

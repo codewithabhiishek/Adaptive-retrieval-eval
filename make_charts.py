@@ -5,6 +5,8 @@ import numpy as np
 
 # --- CONFIG & STYLING ---
 RESULTS_CSV = "results/pilot_100_results.csv"
+STOP_SEARCH_CSV = "results/stop_at_search_results.csv"
+NO_TOOL_CSV = "results/no_tool_baseline_results.csv"
 CHARTS_DIR = "charts"
 os.makedirs(CHARTS_DIR, exist_ok=True)
 
@@ -15,11 +17,8 @@ plt.rcParams["axes.linewidth"] = 0.8
 
 def generate_charts():
     df = pd.read_csv(RESULTS_CSV)
-    
-    # Filter for successful evaluation rows
     df_succ = df[df["status"] == "success"].copy()
     
-    # Convert boolean string columns to actual booleans
     df_succ["search_triggered"] = df_succ["search_triggered"].astype(str).str.lower() == "true"
     df_succ["initial_correct"] = df_succ["initial_correct"].astype(str).str.lower() == "true"
     df_succ["final_correct"] = df_succ["final_correct"].astype(str).str.lower() == "true"
@@ -36,7 +35,7 @@ def generate_charts():
                   color=["#4C72B0", "#55A868"], width=0.45, edgecolor="none")
     
     ax.set_ylabel("Accuracy (%)", fontsize=12, labelpad=10)
-    ax.set_title("Overall Accuracy: Initial Pass vs. Escalated 5-Vote", fontsize=13, fontweight="bold", pad=15)
+    ax.set_title("Overall Accuracy: Initial Pass vs. Escalated 5-Vote (n=100)", fontsize=13, fontweight="bold", pad=15)
     ax.set_ylim(0, 100)
     ax.grid(axis="y", linestyle="--", alpha=0.7)
     
@@ -72,7 +71,7 @@ def generate_charts():
     rects2 = ax.bar(x + width/2, level_stats["final_acc"], width, label="Escalated 5-Vote", color="#55A868")
     
     ax.set_ylabel("Accuracy (%)", fontsize=12, labelpad=10)
-    ax.set_title("Initial vs Escalated Accuracy by MATH-500 Difficulty Level", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title("Initial vs Escalated Accuracy by MATH-500 Difficulty Level (n=100)", fontsize=14, fontweight="bold", pad=15)
     ax.set_xticks(x)
     ax.set_xticklabels(levels, fontsize=11)
     ax.legend(frameon=True, facecolor="white", edgecolor="#cccccc", fontsize=11)
@@ -113,7 +112,6 @@ def generate_charts():
     ax.set_ylim(0, max(searched_count + 15, 10))
     ax.grid(axis="y", linestyle="--", alpha=0.7)
     
-    # Annotate count and percentage on top of bars
     for bar, pct in zip(bars, [searched_pct, no_search_pct]):
         height = bar.get_height()
         ax.annotate(f"{int(height)} ({pct:.1f}%)",
@@ -127,6 +125,42 @@ def generate_charts():
     plt.savefig(search_path, dpi=300)
     plt.close()
     print(f"Created: {search_path}")
+
+    # -------------------------------------------------------------
+    # CHART 4: Experimental Condition Comparison (Tool Offered vs Stop-at-Search vs No-Tool vs 5-Vote)
+    # -------------------------------------------------------------
+    if os.path.exists(STOP_SEARCH_CSV) and os.path.exists(NO_TOOL_CSV):
+        df_stop = pd.read_csv(STOP_SEARCH_CSV)
+        df_notool = pd.read_csv(NO_TOOL_CSV)
+        
+        stop_acc = (df_stop["final_correct"].astype(str).str.lower() == "true").mean() * 100
+        notool_acc = (df_notool["is_correct"].astype(str).str.lower() == "true").mean() * 100
+        
+        conditions = ["Tool Offered\n(Single Pass)", "Stop-at-Search\n(Empty Resumption)", "No-Tool Baseline\n(Plain CoT)", "Tool Offered\n(5-Vote Escalation)"]
+        accuracies = [init_acc, stop_acc, notool_acc, final_acc]
+        colors = ["#4C72B0", "#DD8452", "#8172B0", "#55A868"]
+        
+        fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
+        bars = ax.bar(conditions, accuracies, color=colors, width=0.5, edgecolor="none")
+        
+        ax.set_ylabel("Accuracy (%)", fontsize=12, labelpad=10)
+        ax.set_title("Cross-Experiment Accuracy Comparison (n=100)", fontsize=14, fontweight="bold", pad=15)
+        ax.set_ylim(0, 100)
+        ax.grid(axis="y", linestyle="--", alpha=0.7)
+        
+        for bar in bars:
+            h = bar.get_height()
+            ax.annotate(f"{h:.1f}%",
+                        xy=(bar.get_x() + bar.get_width() / 2, h),
+                        xytext=(0, 5),
+                        textcoords="offset points",
+                        ha="center", va="bottom", fontsize=11, fontweight="bold")
+                        
+        plt.tight_layout()
+        cond_path = os.path.join(CHARTS_DIR, "no_tool_vs_tool_accuracy.png")
+        plt.savefig(cond_path, dpi=300)
+        plt.close()
+        print(f"Created: {cond_path}")
 
 if __name__ == "__main__":
     generate_charts()

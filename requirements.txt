@@ -5,3 +5,5 @@ sympy
 pandas
 matplotlib
 numpy
+scipy
+statsmodels
