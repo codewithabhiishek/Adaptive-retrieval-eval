@@ -127,7 +127,7 @@ def generate_charts():
     print(f"Created: {search_path}")
 
     # -------------------------------------------------------------
-    # CHART 4: Experimental Condition Comparison (Tool Offered vs Stop-at-Search vs No-Tool vs 5-Vote)
+    # CHART 4: Overall Cross-Experiment Condition Comparison
     # -------------------------------------------------------------
     if os.path.exists(STOP_SEARCH_CSV) and os.path.exists(NO_TOOL_CSV):
         df_stop = pd.read_csv(STOP_SEARCH_CSV)
@@ -161,6 +161,44 @@ def generate_charts():
         plt.savefig(cond_path, dpi=300)
         plt.close()
         print(f"Created: {cond_path}")
+
+        # -------------------------------------------------------------
+        # CHART 5: Per-Level No-Tool vs Tool-Offered Accuracy Comparison
+        # -------------------------------------------------------------
+        df_notool["difficulty"] = df_notool["difficulty"].astype(str).str.replace("Level", "").str.strip()
+        df_notool["is_correct_bool"] = df_notool["is_correct"].astype(str).str.lower() == "true"
+        
+        notool_level_stats = df_notool.groupby("difficulty")["is_correct_bool"].mean() * 100
+        
+        x = np.arange(len(levels))
+        width = 0.35
+        
+        fig, ax = plt.subplots(figsize=(9, 5.5), dpi=300)
+        rects1 = ax.bar(x - width/2, level_stats["init_acc"], width, label="Tool Offered (Single Pass)", color="#4C72B0")
+        rects2 = ax.bar(x + width/2, notool_level_stats, width, label="No-Tool Baseline (Plain CoT)", color="#8172B0")
+        
+        ax.set_ylabel("Accuracy (%)", fontsize=12, labelpad=10)
+        ax.set_title("Tool-Offered vs No-Tool Accuracy by MATH-500 Difficulty Level", fontsize=14, fontweight="bold", pad=15)
+        ax.set_xticks(x)
+        ax.set_xticklabels(levels, fontsize=11)
+        ax.legend(frameon=True, facecolor="white", edgecolor="#cccccc", fontsize=11)
+        ax.set_ylim(0, 100)
+        ax.grid(axis="y", linestyle="--", alpha=0.7)
+        
+        for rect in rects1:
+            h = rect.get_height()
+            ax.annotate(f"{h:.1f}%", xy=(rect.get_x() + rect.get_width() / 2, h),
+                        xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=9)
+        for rect in rects2:
+            h = rect.get_height()
+            ax.annotate(f"{h:.1f}%", xy=(rect.get_x() + rect.get_width() / 2, h),
+                        xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=9)
+
+        plt.tight_layout()
+        by_level_cond_path = os.path.join(CHARTS_DIR, "no_tool_vs_tool_by_level.png")
+        plt.savefig(by_level_cond_path, dpi=300)
+        plt.close()
+        print(f"Created: {by_level_cond_path}")
 
 if __name__ == "__main__":
     generate_charts()

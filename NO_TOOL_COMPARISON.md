@@ -1,6 +1,10 @@
 # No-Tool Baseline vs. Tool-Offered Accuracy Comparison
 
-This table compares single-pass CoT accuracy across MATH-500 difficulty levels when the search tool is offered versus when no tool is mentioned.
+This document compares single-pass CoT accuracy across MATH-500 difficulty levels when the search tool is offered versus when no tool is mentioned.
+
+![No-Tool vs Tool Offered Accuracy by Level](charts/no_tool_vs_tool_by_level.png)
+
+## Accuracy Comparison Table
 
 | Difficulty Level | Sample Size ($n$) | Tool Offered Initial Accuracy (%) | No-Tool Baseline Accuracy (%) | Difference (pp) |
 | :--- | :---: | :---: | :---: | :---: |
