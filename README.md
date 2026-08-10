@@ -109,14 +109,21 @@ By difficulty level:
 
 **Finding 2: but self-consistency voting still delivers a large, genuine accuracy gain.** While the routing mechanism largely failed, since there was almost never a "cheap path" to route to, the underlying escalation technique of 5-vote majority voting improved accuracy from 36.0% to 53.0%, a +17.0pp gain. This held most strongly on medium-difficulty problems (Levels 2-3, +20 to +26pp) and was weakest on the hardest problems (Level 5, +4.3pp only), while easier problems (Levels 1-2) still saw solid double-digit gains.
 
-A few plausible explanations for Finding 1 (not confirmed, worth further investigation):
-1. Model capability gap: `llama-3.1-8b-instant` may trade reasoning depth for speed compared to a full-precision self-hosted model.
-2. The explicit tool-offering in the system prompt may cause smaller models to over-invoke the tool regardless of actual need.
-3. Groq inference showed slight non-determinism even at temperature=0.0, worth noting as a possible minor confound rather than a primary driver.
+### Follow-Up Experiments & Control Studies
+
+To isolate the exact mechanisms behind the 98% search trigger rate and test tool distraction effects, we conducted two controlled follow-up experiments ($n=100$) and statistical significance testing:
+
+![Cross-Experiment Accuracy Comparison](charts/no_tool_vs_tool_accuracy.png)
+
+![Tool Offered vs No-Tool Accuracy by Level](charts/no_tool_vs_tool_by_level.png)
+
+1. **Stop-at-`</search>` Experiment:** Halting generation immediately upon emitting `</search>` (and resuming with no retrieval results) yielded a **97.0% search trigger rate**, proving that over-triggering is driven by model/quantization factors rather than continuous generation dynamics. Resuming step-by-step reasoning after stopping reached **45.0% single-pass accuracy**.
+2. **No-Tool Baseline Experiment (Plain CoT):** Evaluating the exact same 100 problems with a plain Chain-of-Thought prompt (making **zero mention of tools**) yielded **48.0% accuracy** — demonstrating a **+12.0 percentage point tool distraction penalty** (36.0% vs 48.0%) caused purely by offering the search tool in the system prompt.
+3. **Statistical Significance:** McNemar's paired binary test confirmed the +12.0pp accuracy gap between No-Tool CoT (48.0%) and Tool-Offered CoT (36.0%) is statistically significant ($p = 0.0118$, $\chi^2 = 6.05$, $95\%\text{ Bootstrap CI}: [+4.0\text{pp}, +20.0\text{pp}]$). Detailed statistical breakdowns are available in [SIGNIFICANCE_RESULTS.md](SIGNIFICANCE_RESULTS.md) and [NO_TOOL_COMPARISON.md](NO_TOOL_COMPARISON.md).
 
 ### Honest conclusion
 
-The metacognitive "know when I don't know" signal identified in the paper appears to be model-dependent rather than a general property of adaptive-retrieval agents. That said, the escalation strategy the paper's finding would have gated behind that signal, self-consistency voting, is independently effective. It delivers a substantial accuracy improvement regardless of whether the routing signal itself works.
+The metacognitive "know when I don't know" signal identified in the paper appears to be model-dependent rather than a general property of adaptive-retrieval agents. Merely offering a search tool introduces a significant tool-distraction penalty (-12.0pp) on small hosted models by causing them to over-trigger search on problems they can already solve. However, self-consistency voting remains independently effective, recovering +17.0pp in accuracy regardless of whether the routing signal works.
 
 ## What "done" looks like
 
