@@ -4,7 +4,7 @@ This document reports McNemar's test for paired binary outcomes and 95% bootstra
 
 ## 1. Overall Significance Test Summary ($n=100$)
 
-| Condition / Metric | Tool Offered Initial Pass | No-Tool Baseline (Plain CoT) | Difference (pp) | 95% Bootstrap CI (pp) | McNemar Statistic ($\chi^2$) | p-value | Statistically Significant ($p < 0.05$) |
+| Condition / Metric | Tool Offered Initial Pass | No-Tool Baseline (Plain CoT) | Difference (pp) | 95% Bootstrap CI (pp) | McNemar Statistic ($\\chi^2$) | p-value | Statistically Significant ($p < 0.05$) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Overall (n=100)** | 36.0% | 48.0% | +12.0pp | [4.0pp, 20.0pp] | 6.05 | 0.0118 | **Yes** |
 
@@ -12,7 +12,7 @@ This document reports McNemar's test for paired binary outcomes and 95% bootstra
 
 ## 2. Difficulty Level Significance & Sample Size Breakdown
 
-| Difficulty Level | Sample Size ($n$) | Tool Offered Accuracy (%) | No-Tool Baseline Accuracy (%) | Difference (pp) | 95% Bootstrap CI (pp) | McNemar Statistic ($\chi^2$) | p-value | Significant ($p < 0.05$) |
+| Difficulty Level | Sample Size ($n$) | Tool Offered Accuracy (%) | No-Tool Baseline Accuracy (%) | Difference (pp) | 95% Bootstrap CI (pp) | McNemar Statistic ($\\chi^2$) | p-value | Significant ($p < 0.05$) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Level 1** | 11 | 54.5% | 63.6% | +9.1pp | [-18.2pp, 36.4pp] | 0.0 | 1.0000 | No |
 | **Level 2** | 25 | 48.0% | 64.0% | +16.0pp | [4.0pp, 32.0pp] | 2.25 | 0.1250 | No |

@@ -24,7 +24,7 @@ Evaluating all $n=100$ MATH-500 problems with explicit generation stopping at `<
   - **Conclusion:** The high tool invocation rate is driven primarily by model/endpoint characteristics (e.g. quantization / Groq API tool-use tuning), rather than continuous token generation.
 
 * **Accuracy After Empty-Retrieval Resumption:** **45.0% (45/100)**
-  - Resuming step-by-step reasoning after an empty search signal yielded **45.0% single-pass accuracy** (up from 36.0% initial single-pass accuracy in continuous generation).
+  - Resuming step-by-step reasoning after an empty search signal yielded **45.0% 2-turn post-resumption accuracy** (up from 36.0% 1-turn initial accuracy in continuous generation).
   - Breakdown by difficulty: Level 1 (72.7%), Level 2 (64.0%), Level 3 (63.2%), Level 4 (27.3%), Level 5 (13.0%).
 
 ---
